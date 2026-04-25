@@ -1,520 +1,666 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>Dashboard Recon Bug Bounty</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0a0e14;
+      --panel:#0d1117;
+      --panel-2:#080c10;
+      --border:#1e2a3a;
+      --accent:#00d4ff;
+      --green:#39ff80;
+      --amber:#ffb300;
+      --red:#ff4444;
+      --text:#c9d1d9;
+      --muted:#6b7b8c;
+      --shadow:0 20px 60px rgba(0,0,0,.35);
+      --font-mono:'Share Tech Mono', monospace;
+      --font-ui:'Rajdhani', sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{width:100%;min-height:100%;margin:0;padding:0;background:var(--bg)}
+    body{min-height:100vh;background:linear-gradient(180deg,#091019 0%, #0a0e14 100%);color:var(--text);font-family:var(--font-ui)}
+    .app{
+      width:min(1280px, calc(100vw - 24px));
+      margin:12px auto;
+      min-height:calc(100vh - 24px);
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:rgba(13,17,23,.98);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .topbar{
+      display:flex;align-items:center;gap:14px;
+      padding:16px 20px;
+      background:linear-gradient(180deg, rgba(10,14,20,.96), rgba(13,17,23,.96));
+      border-bottom:1px solid var(--border);
+    }
+    .brand{
+      font-family:var(--font-mono);
+      letter-spacing:2px;
+      color:var(--accent);
+      font-size:18px;
+      line-height:1;
+    }
+    .brand span{color:var(--green)}
+    .status-dot{width:9px;height:9px;border-radius:999px;background:var(--green);box-shadow:0 0 10px rgba(57,255,128,.7);animation:pulse 1.6s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+    .status{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+    .badges{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px}
+    .badge{font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:999px;border:1px solid;letter-spacing:.8px}
+    .badge.red{color:var(--red);border-color:var(--red)}
+    .badge.amber{color:var(--amber);border-color:var(--amber)}
+    .badge.green{color:var(--green);border-color:var(--green)}
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap');
-  :root {
-    --c-bg: #0a0e14;
-    --c-panel: #0d1117;
-    --c-border: #1e2a3a;
-    --c-accent: #00d4ff;
-    --c-green: #39ff80;
-    --c-amber: #ffb300;
-    --c-red: #ff4444;
-    --c-text: #c9d1d9;
-    --c-muted: #5a6a7a;
-    --c-tab-active: #00d4ff;
-    --font-mono: 'Share Tech Mono', monospace;
-    --font-ui: 'Rajdhani', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: transparent; }
-  .recon-root {
-    background: var(--c-bg);
-    border: 1px solid var(--c-border);
-    border-radius: 10px;
-    font-family: var(--font-ui);
-    color: var(--c-text);
-    overflow: hidden;
-    min-height: 580px;
-  }
-  .header {
-    background: var(--c-panel);
-    border-bottom: 1px solid var(--c-border);
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .logo {
-    font-family: var(--font-mono);
-    font-size: 18px;
-    color: var(--c-accent);
-    letter-spacing: 2px;
-  }
-  .logo span { color: var(--c-green); }
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--c-green);
-    box-shadow: 0 0 6px var(--c-green);
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .status-text { font-size: 12px; color: var(--c-muted); font-family: var(--font-mono); }
-  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-  .badge {
-    font-size: 10px; font-family: var(--font-mono);
-    padding: 2px 8px; border-radius: 3px;
-    border: 1px solid;
-  }
-  .badge-red { color: var(--c-red); border-color: var(--c-red); }
-  .badge-amber { color: var(--c-amber); border-color: var(--c-amber); }
-  .badge-green { color: var(--c-green); border-color: var(--c-green); }
+    .targetbar{
+      display:flex;align-items:center;gap:10px;
+      padding:14px 20px;
+      background:var(--panel-2);
+      border-bottom:1px solid var(--border);
+    }
+    .targetlabel{min-width:78px;font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:1px}
+    .targetinput{
+      flex:1;
+      background:var(--panel);
+      color:var(--green);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:12px 14px;
+      outline:none;
+      font-family:var(--font-mono);
+      font-size:14px;
+    }
+    .targetinput:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.12)}
+    .btn{
+      border:none;border-radius:10px;cursor:pointer;
+      padding:12px 18px;
+      font-family:var(--font-ui);
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:.6px;
+      transition:transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+    .btn:hover{transform:translateY(-1px);opacity:.95}
+    .btn.primary{background:var(--accent);color:#001018}
+    .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .tabs{
+      display:flex;gap:0;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--border)
+    }
+    .tab{
+      padding:12px 16px;
+      white-space:nowrap;
+      cursor:pointer;
+      color:var(--muted);
+      font-family:var(--font-mono);
+      font-size:12px;
+      border-bottom:2px solid transparent;
+      transition:color .15s ease,border-color .15s ease,background .15s ease;
+      user-select:none;
+    }
+    .tab:hover{color:var(--text);background:rgba(255,255,255,.02)}
+    .tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0,212,255,.04)}
+    .content{padding:18px 20px 22px}
+    .loading{
+      height:2px;background:#131b24;border-radius:999px;margin-bottom:16px;overflow:hidden;display:none
+    }
+    .loading.active{display:block}
+    .loading span{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+    .panel{display:none}
+    .panel.active{display:block}
 
-  .target-bar {
-    padding: 12px 20px;
-    background: #080c10;
-    border-bottom: 1px solid var(--c-border);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-  .target-label { font-family: var(--font-mono); font-size: 12px; color: var(--c-accent); min-width: 60px; }
-  .target-input {
-    flex: 1;
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-radius: 5px;
-    padding: 7px 12px;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--c-green);
-    outline: none;
-  }
-  .target-input:focus { border-color: var(--c-accent); }
-  .scan-btn {
-    background: var(--c-accent);
-    color: #000;
-    border: none;
-    border-radius: 5px;
-    padding: 8px 20px;
-    font-family: var(--font-ui);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: opacity .15s;
-  }
-  .scan-btn:hover { opacity: 0.85; }
-  .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .tabs {
-    display: flex;
-    background: var(--c-panel);
-    border-bottom: 1px solid var(--c-border);
-    overflow-x: auto;
-  }
-  .tab {
-    padding: 10px 18px;
-    font-size: 12px;
-    font-family: var(--font-mono);
-    color: var(--c-muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap;
-    transition: color .15s;
-    letter-spacing: .5px;
-  }
-  .tab:hover { color: var(--c-text); }
-  .tab.active { color: var(--c-accent); border-bottom-color: var(--c-accent); }
-
-  .content { padding: 16px 20px; }
-
-  .panel { display: none; }
-  .panel.active { display: block; }
-
-  .section-title {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--c-muted);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 12px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--c-border);
-  }
-
-  .cmd-block {
-    background: #060a0f;
-    border: 1px solid var(--c-border);
-    border-radius: 6px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    position: relative;
-  }
-  .cmd-label {
-    font-size: 10px;
-    color: var(--c-accent);
-    font-family: var(--font-mono);
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-  }
-  .cmd-text {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--c-green);
-    word-break: break-all;
-    line-height: 1.6;
-  }
-  .cmd-text .kw { color: var(--c-amber); }
-  .cmd-text .flag { color: #7dd3fc; }
-  .cmd-text .val { color: var(--c-text); }
-  .copy-btn {
-    position: absolute;
-    top: 10px; right: 10px;
-    background: transparent;
-    border: 1px solid var(--c-border);
-    color: var(--c-muted);
-    font-size: 10px;
-    font-family: var(--font-mono);
-    padding: 2px 8px;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .copy-btn:hover { border-color: var(--c-accent); color: var(--c-accent); }
-
-  .tool-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-  .tool-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-radius: 6px;
-    padding: 10px 12px;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .tool-card:hover { border-color: var(--c-accent); }
-  .tool-card.selected { border-color: var(--c-green); background: #0a1a12; }
-  .tool-name { font-size: 13px; font-weight: 600; color: var(--c-text); margin-bottom: 3px; }
-  .tool-desc { font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); }
-
-  .result-box {
-    background: #060a0f;
-    border: 1px solid var(--c-border);
-    border-radius: 6px;
-    min-height: 120px;
-    padding: 12px 14px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--c-text);
-    line-height: 1.7;
-    overflow-y: auto;
-    max-height: 220px;
-  }
-  .result-line { margin-bottom: 2px; }
-  .result-line.ok { color: var(--c-green); }
-  .result-line.warn { color: var(--c-amber); }
-  .result-line.err { color: var(--c-red); }
-  .result-line.info { color: var(--c-accent); }
-  .result-line.muted { color: var(--c-muted); }
-
-  .checklist { list-style: none; }
-  .checklist li {
-    padding: 7px 0;
-    border-bottom: 1px solid #131b24;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    font-size: 13px;
-  }
-  .check-icon { font-size: 11px; min-width: 18px; margin-top: 2px; }
-  .check-title { font-weight: 600; color: var(--c-text); }
-  .check-desc { font-size: 11px; color: var(--c-muted); margin-top: 2px; font-family: var(--font-mono); }
-
-  .wordlist-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .wl-card {
-    background: var(--c-panel);
-    border: 1px solid var(--c-border);
-    border-radius: 6px;
-    padding: 10px 12px;
-  }
-  .wl-name { font-size: 12px; font-weight: 600; color: var(--c-accent); }
-  .wl-path { font-size: 10px; color: var(--c-muted); font-family: var(--font-mono); margin-top: 2px; }
-  .wl-use { font-size: 11px; color: var(--c-text); margin-top: 4px; }
-
-  .loading-bar {
-    height: 2px;
-    background: var(--c-border);
-    border-radius: 1px;
-    margin-bottom: 12px;
-    overflow: hidden;
-    display: none;
-  }
-  .loading-fill {
-    height: 100%;
-    background: var(--c-accent);
-    width: 0%;
-    transition: width .3s;
-  }
-  .loading-bar.active { display: block; }
-
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 500px) { .two-col { grid-template-columns: 1fr; } }
-</style>
-
-<div class="recon-root">
-  <div class="header">
-    <div class="logo">RECON<span>PRO</span></div>
-    <div class="status-dot"></div>
-    <div class="status-text">READY</div>
-    <div class="header-right">
-      <div class="badge badge-red">CRITICAL</div>
-      <div class="badge badge-amber">HIGH</div>
-      <div class="badge badge-green">PASSIVE</div>
-    </div>
-  </div>
-
-  <div class="target-bar">
-    <div class="target-label">TARGET:</div>
-    <input class="target-input" id="targetInput" type="text" placeholder="example.com" value="" />
-    <button class="scan-btn" onclick="generateRecon()">GENERATE</button>
-  </div>
-
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('subdomain')">Subdomain</div>
-    <div class="tab" onclick="switchTab('portscan')">Port Scan</div>
-    <div class="tab" onclick="switchTab('http')">HTTP Probe</div>
-    <div class="tab" onclick="switchTab('urls')">URL/JS</div>
-    <div class="tab" onclick="switchTab('whois')">WHOIS/DNS</div>
-    <div class="tab" onclick="switchTab('vuln')">Vuln Scan</div>
-    <div class="tab" onclick="switchTab('methodology')">Methodology</div>
-    <div class="tab" onclick="switchTab('wordlist')">Wordlists</div>
-  </div>
-
-  <div class="content">
-    <div class="loading-bar" id="loadingBar"><div class="loading-fill" id="loadingFill"></div></div>
-
-    <!-- SUBDOMAIN -->
-    <div class="panel active" id="panel-subdomain">
-      <div class="section-title">// Subdomain Enumeration</div>
-      <div id="cmds-subdomain"></div>
-    </div>
-
-    <!-- PORT SCAN -->
-    <div class="panel" id="panel-portscan">
-      <div class="section-title">// Port Scanning</div>
-      <div id="cmds-portscan"></div>
-    </div>
-
-    <!-- HTTP PROBE -->
-    <div class="panel" id="panel-http">
-      <div class="section-title">// HTTP Probing & Fingerprinting</div>
-      <div id="cmds-http"></div>
-    </div>
-
-    <!-- URLS -->
-    <div class="panel" id="panel-urls">
-      <div class="section-title">// URL Discovery & JS Analysis</div>
-      <div id="cmds-urls"></div>
-    </div>
-
-    <!-- WHOIS -->
-    <div class="panel" id="panel-whois">
-      <div class="section-title">// WHOIS / DNS Recon</div>
-      <div id="cmds-whois"></div>
-    </div>
-
-    <!-- VULN -->
-    <div class="panel" id="panel-vuln">
-      <div class="section-title">// Vulnerability Scanning</div>
-      <div id="cmds-vuln"></div>
-    </div>
-
-    <!-- METHODOLOGY -->
-    <div class="panel" id="panel-methodology">
-      <div class="section-title">// Bug Hunting Methodology</div>
-      <ul class="checklist" id="methodology-list"></ul>
-    </div>
-
-    <!-- WORDLIST -->
-    <div class="panel" id="panel-wordlist">
-      <div class="section-title">// Recommended Wordlists</div>
-      <div class="wordlist-grid" id="wordlist-grid"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-let target = 'example.com';
-
-const methodology = [
-  { icon:'01', title:'Passive Recon', desc:'WHOIS, crt.sh, Shodan, Google Dorks, LinkedIn', color:'info' },
-  { icon:'02', title:'Subdomain Enum', desc:'Subfinder, Amass, Assetfinder, Brute-force, Permutation', color:'info' },
-  { icon:'03', title:'Port & Service Scan', desc:'Nmap full port, Masscan, Service version detection', color:'warn' },
-  { icon:'04', title:'HTTP Probing', desc:'Httpx, Whatweb, Wappalyzer — find live hosts & tech stack', color:'info' },
-  { icon:'05', title:'URL & JS Harvesting', desc:'Waybackurls, Gau, Hakrawler, LinkFinder on JS files', color:'info' },
-  { icon:'06', title:'Directory Bruteforce', desc:'Ffuf, Gobuster, Feroxbuster — common paths + custom wordlists', color:'warn' },
-  { icon:'07', title:'Vulnerability Scanning', desc:'Nuclei templates, Nikto, DalFox XSS, SQLmap', color:'err' },
-  { icon:'08', title:'Manual Testing', desc:'Parameter tampering, Auth bypass, IDOR, SSRF, XXE', color:'err' },
-  { icon:'09', title:'Report & PoC', desc:'Screenshot, Burp history, CVSS scoring, PoC write-up', color:'ok' },
-];
-
-const wordlists = [
-  { name:'SecLists', path:'/usr/share/seclists/', use:'General purpose — dirs, subdomains, passwords' },
-  { name:'dns-Jhaddix', path:'dns_jhaddix_all.txt', use:'Best subdomain brute wordlist' },
-  { name:'directory-list-2.3', path:'Discovery/Web-Content/', use:'Medium/big dir brute wordlist' },
-  { name:'assetnote', path:'https://wordlists.assetnote.io', use:'API paths, params, tech-specific' },
-  { name:'commonspeak2', path:'github: assetnote', use:'Modern tech-aware wordlist' },
-  { name:'raft-medium', path:'raft-medium-directories.txt', use:'Reliable medium directory list' },
-];
-
-function h(s) { return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function T() { return document.getElementById('targetInput').value.trim() || 'example.com'; }
-function domain() { return T().replace(/^https?:\/\//,'').split('/')[0]; }
-function ip() { return domain(); }
-
-function cmd(label, raw) {
-  const colored = raw
-    .replace(/^(\w[\w-]+)/, '<span class="kw">$1</span>')
-    .replace(/( -[\w-]+)/g, '<span class="flag">$1</span>');
-  return `<div class="cmd-block">
-    <div class="cmd-label"># ${h(label)}</div>
-    <div class="cmd-text">${colored}</div>
-    <button class="copy-btn" onclick="copyCmd(this,'${raw.replace(/'/g,"\\'")}')">copy</button>
-  </div>`;
-}
-
-function copyCmd(btn, text) {
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = 'copied!';
-    setTimeout(() => btn.textContent = 'copy', 1500);
-  });
-}
-
-function generateRecon() {
-  const d = domain();
-  target = d;
-
-  renderSubdomain(d);
-  renderPortscan(d);
-  renderHttp(d);
-  renderUrls(d);
-  renderWhois(d);
-  renderVuln(d);
-  renderMethodology();
-  renderWordlist();
-
-  const lb = document.getElementById('loadingBar');
-  const lf = document.getElementById('loadingFill');
-  lb.classList.add('active');
-  lf.style.width = '0%';
-  setTimeout(() => lf.style.width = '100%', 50);
-  setTimeout(() => lb.classList.remove('active'), 600);
-}
-
-function renderSubdomain(d) {
-  document.getElementById('cmds-subdomain').innerHTML = [
-    cmd('Subfinder (passive)', `subfinder -d ${d} -all -recursive -o subfinder_${d}.txt`),
-    cmd('Amass (passive)', `amass enum -passive -d ${d} -o amass_${d}.txt`),
-    cmd('Assetfinder', `assetfinder --subs-only ${d} | tee assetfinder_${d}.txt`),
-    cmd('crt.sh (certificate transparency)', `curl -s "https://crt.sh/?q=%.${d}&output=json" | jq -r '.[].name_value' | sort -u`),
-    cmd('Brute-force with dnsx', `dnsx -d ${d} -w /usr/share/seclists/Discovery/DNS/dns-Jhaddix.txt -o dnsx_${d}.txt`),
-    cmd('Combine & resolve unique', `cat subfinder_${d}.txt amass_${d}.txt assetfinder_${d}.txt | sort -u | dnsx -silent -o resolved_${d}.txt`),
-    cmd('Subdomain permutation (gotator)', `gotator -sub resolved_${d}.txt -perm /usr/share/seclists/Discovery/DNS/best-dns-wordlist.txt | dnsx -silent`),
-  ].join('');
-}
-
-function renderPortscan(d) {
-  document.getElementById('cmds-portscan').innerHTML = [
-    cmd('Masscan (fast full port)', `masscan -p1-65535 ${d} --rate=10000 -oL masscan_${d}.txt`),
-    cmd('Nmap full port + service', `nmap -p- -sV -sC -T4 --open ${d} -oN nmap_full_${d}.txt`),
-    cmd('Nmap top 1000 quick', `nmap -sV --top-ports 1000 ${d} -oN nmap_quick_${d}.txt`),
-    cmd('Nmap script vuln scan', `nmap --script vuln -p 80,443,8080,8443 ${d}`),
-    cmd('Shodan CLI recon', `shodan host $(dig +short ${d})`),
-  ].join('');
-}
-
-function renderHttp(d) {
-  document.getElementById('cmds-http').innerHTML = [
-    cmd('Httpx probe (live hosts)', `cat resolved_${d}.txt | httpx -silent -status-code -title -tech-detect -o httpx_${d}.txt`),
-    cmd('Httpx with ports', `cat resolved_${d}.txt | httpx -ports 80,443,8080,8443,8888 -follow-redirects -status-code -title`),
-    cmd('Whatweb tech detection', `whatweb -a 3 https://${d} --log-json whatweb_${d}.json`),
-    cmd('Check security headers', `curl -sI https://${d} | grep -i "x-frame\\|csp\\|hsts\\|x-content\\|referrer"`),
-    cmd('Wappalyzer CLI', `wappalyzer https://${d}`),
-    cmd('Eyewitness (screenshot)', `eyewitness -f resolved_${d}.txt --web --timeout 30`),
-  ].join('');
-}
-
-function renderUrls(d) {
-  document.getElementById('cmds-urls').innerHTML = [
-    cmd('Waybackurls (historical)', `waybackurls ${d} | tee wayback_${d}.txt`),
-    cmd('Gau (all URLs)', `gau ${d} --subs | tee gau_${d}.txt`),
-    cmd('Katana (crawler)', `katana -u https://${d} -d 5 -jc -o katana_${d}.txt`),
-    cmd('Hakrawler', `echo https://${d} | hakrawler -subs -d 3`),
-    cmd('Extract JS files', `cat gau_${d}.txt wayback_${d}.txt | grep "\\.js$" | sort -u | tee jsfiles_${d}.txt`),
-    cmd('LinkFinder on JS', `cat jsfiles_${d}.txt | xargs -I{} linkfinder -i {} -o cli`),
-    cmd('Extract params (interesting)', `cat gau_${d}.txt wayback_${d}.txt | grep "?" | uro | tee params_${d}.txt`),
-    cmd('Filter interesting params', `cat params_${d}.txt | grep -E "url=|redirect=|next=|return=|path=|file=|cmd=|exec=|id=|user="`),
-  ].join('');
-}
-
-function renderWhois(d) {
-  document.getElementById('cmds-whois').innerHTML = [
-    cmd('WHOIS lookup', `whois ${d}`),
-    cmd('DNS records (all)', `dig ${d} ANY +noall +answer`),
-    cmd('MX records', `dig ${d} MX +short`),
-    cmd('SPF / TXT records', `dig ${d} TXT +short`),
-    cmd('Zone transfer (AXFR)', `dig axfr ${d} @$(dig ns ${d} +short | head -1)`),
-    cmd('Subfinder + DNSX full info', `dnsx -d ${d} -a -cname -mx -ns -txt -ptr -resp -silent`),
-    cmd('BGP / ASN lookup', `curl -s "https://api.bgpview.io/search?query_term=${d}" | jq .data`),
-    cmd('Reverse IP (hackertarget)', `curl -s "https://api.hackertarget.com/reverseiplookup/?q=${d}"`),
-  ].join('');
-}
-
-function renderVuln(d) {
-  document.getElementById('cmds-vuln').innerHTML = [
-    cmd('Nuclei (all templates)', `nuclei -u https://${d} -t /root/nuclei-templates/ -severity critical,high,medium -o nuclei_${d}.txt`),
-    cmd('Nuclei CVE only', `nuclei -u https://${d} -t /root/nuclei-templates/cves/ -o nuclei_cves_${d}.txt`),
-    cmd('Nikto web scan', `nikto -host https://${d} -output nikto_${d}.txt`),
-    cmd('Ffuf directory brute', `ffuf -u https://${d}/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -mc 200,301,302,403 -o ffuf_${d}.json`),
-    cmd('DalFox XSS scan', `dalfox url https://${d} --follow-redirects`),
-    cmd('XSS from params', `cat params_${d}.txt | dalfox pipe --follow-redirects -o xss_${d}.txt`),
-    cmd('SQLmap (blind)', `sqlmap -u "https://${d}/?id=1" --batch --dbs --random-agent`),
-    cmd('CORS misconfiguration', `curl -sI -H "Origin: https://evil.com" https://${d} | grep -i "access-control"`),
-    cmd('SSRF test (basic)', `curl -s "https://${d}/?url=http://169.254.169.254/latest/meta-data/"`),
-    cmd('Open redirect check', `ffuf -u "https://${d}/FUZZ" -w /usr/share/seclists/Fuzzing/redirects.txt -mc 301,302`),
-  ].join('');
-}
-
-function renderMethodology() {
-  const colors = { info:'var(--c-accent)', warn:'var(--c-amber)', err:'var(--c-red)', ok:'var(--c-green)' };
-  document.getElementById('methodology-list').innerHTML = methodology.map(m => `
-    <li>
-      <div class="check-icon" style="color:${colors[m.color]};font-family:var(--font-mono)">[${m.icon}]</div>
-      <div>
-        <div class="check-title">${m.title}</div>
-        <div class="check-desc">${m.desc}</div>
+    .hero{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:14px;
+      margin-bottom:16px;
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(6,10,15,.95), rgba(12,17,24,.95));
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+    }
+    .hero h1{
+      margin:0 0 8px;
+      font-size:28px;
+      line-height:1.1;
+      color:var(--text);
+      letter-spacing:.2px
+    }
+    .hero p{margin:0;color:var(--muted);font-size:15px;line-height:1.65}
+    .subtext{margin-top:10px;font-size:13px;color:var(--green);font-family:var(--font-mono);line-height:1.6}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+    .mini{
+      background:rgba(13,17,23,.88);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px
+    }
+    .mini .k{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:1px;margin-bottom:6px}
+    .mini .v{font-size:13px;line-height:1.55;color:var(--text)}
+    .side h3{margin:0 0 10px;font-size:16px;color:var(--accent);letter-spacing:.4px}
+    .steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+    .steps li{
+      display:flex;gap:10px;align-items:flex-start;
+      padding:10px 0;border-bottom:1px solid rgba(30,42,58,.65)
+    }
+    .steps li:last-child{border-bottom:none}
+    .stepn{
+      min-width:26px;height:26px;border-radius:8px;
+      display:grid;place-items:center;
+      font-family:var(--font-mono);font-size:11px;
+      color:var(--accent);border:1px solid var(--border);background:#091019
+    }
+    .steptxt b{display:block;font-size:13px;color:var(--text);margin-bottom:2px}
+    .steptxt span{display:block;font-size:11px;color:var(--muted);line-height:1.45;font-family:var(--font-mono)}
+    .section-title{
+      font-family:var(--font-mono);
+      font-size:11px;
+      color:var(--muted);
+      letter-spacing:2px;
+      text-transform:uppercase;
+      margin:2px 0 12px;
+      padding-bottom:8px;
+      border-bottom:1px solid var(--border);
+    }
+    .note{
+      border:1px solid rgba(0,212,255,.25);
+      background:rgba(0,212,255,.05);
+      border-radius:12px;
+      padding:12px 14px;
+      margin-bottom:14px;
+      color:var(--text);
+      line-height:1.65;
+      font-size:14px;
+    }
+    .note strong{color:var(--accent)}
+    .section-card{
+      display:grid;gap:10px;
+      margin-bottom:12px;
+    }
+    .explain{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:10px;
+      margin-bottom:14px;
+    }
+    .explain .box{
+      background:rgba(13,17,23,.88);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px
+    }
+    .box .label{font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:1px;margin-bottom:6px}
+    .box .text{font-size:13px;line-height:1.55;color:var(--text)}
+    .box .text small{display:block;color:var(--muted);font-family:var(--font-mono);margin-top:6px;line-height:1.45}
+    .cmd-block{
+      position:relative;
+      background:#060a0f;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:14px 14px 12px;
+    }
+    .cmd-label{
+      font-size:10px;
+      color:var(--accent);
+      font-family:var(--font-mono);
+      margin-bottom:6px;
+      letter-spacing:1px
+    }
+    .cmd-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+    .cmd-desc{font-size:13px;line-height:1.55;color:var(--muted);margin-bottom:10px}
+    .cmd-text{
+      font-family:var(--font-mono);
+      font-size:12px;
+      color:var(--green);
+      word-break:break-all;
+      line-height:1.7;
+      padding-right:70px
+    }
+    .cmd-text .kw{color:var(--amber)}
+    .cmd-text .flag{color:#7dd3fc}
+    .cmd-text .val{color:var(--text)}
+    .copy-btn{
+      position:absolute;top:12px;right:12px;
+      background:transparent;border:1px solid var(--border);color:var(--muted);
+      font-size:10px;font-family:var(--font-mono);
+      padding:3px 8px;border-radius:8px;cursor:pointer;
+      transition:all .15s ease
+    }
+    .copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .result{
+      background:#060a0f;border:1px solid var(--border);border-radius:12px;padding:14px
+    }
+    .result h4{margin:0 0 8px;font-size:14px;color:var(--accent)}
+    .result p,.result li{font-size:13px;line-height:1.7;color:var(--text)}
+    .result ul{margin:8px 0 0 18px;padding:0}
+    .checklist{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+    .checklist li{
+      display:flex;gap:10px;align-items:flex-start;
+      background:rgba(13,17,23,.88);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px
+    }
+    .icon{
+      min-width:30px;height:30px;border-radius:9px;
+      display:grid;place-items:center;
+      font-family:var(--font-mono);font-size:10px;
+      border:1px solid var(--border);color:var(--accent);background:#091019
+    }
+    .checktitle{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+    .checkdesc{font-size:12px;color:var(--muted);line-height:1.55;font-family:var(--font-mono)}
+    .word-grid{
+      display:grid;grid-template-columns:repeat(2,1fr);gap:10px
+    }
+    .wl{
+      background:rgba(13,17,23,.88);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px
+    }
+    .wl .name{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:4px}
+    .wl .path{font-size:11px;color:var(--muted);font-family:var(--font-mono);margin-bottom:6px}
+    .wl .use{font-size:13px;color:var(--text);line-height:1.55}
+    .tip-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .tip{
+      background:rgba(13,17,23,.88);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:14px
+    }
+    .tip h4{margin:0 0 8px;font-size:14px;color:var(--green)}
+    .tip p{margin:0;color:var(--text);font-size:13px;line-height:1.65}
+    .footer{
+      margin-top:14px;
+      color:var(--muted);
+      font-family:var(--font-mono);
+      font-size:11px;
+      line-height:1.6;
+    }
+    .pill{
+      display:inline-block;margin-top:8px;
+      padding:4px 8px;border-radius:999px;border:1px solid var(--border);
+      color:var(--muted);font-size:10px;font-family:var(--font-mono)
+    }
+    @media (max-width: 980px){
+      .hero,.explain,.two-col,.three-col,.tip-grid,.word-grid,.grid-3{grid-template-columns:1fr}
+      .app{width:calc(100vw - 12px);margin:6px auto}
+      .topbar,.targetbar,.content{padding-left:14px;padding-right:14px}
+      .cmd-text{padding-right:0}
+      .copy-btn{position:static;margin-top:10px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">RECON<span>PRO</span></div>
+      <div class="status-dot"></div>
+      <div class="status">SIAP | Mode pembelajaran & bug bounty</div>
+      <div class="badges">
+        <div class="badge red">CRITICAL</div>
+        <div class="badge amber">HIGH</div>
+        <div class="badge green">PASSIVE</div>
       </div>
-    </li>
-  `).join('');
-}
-
-function renderWordlist() {
-  document.getElementById('wordlist-grid').innerHTML = wordlists.map(w => `
-    <div class="wl-card">
-      <div class="wl-name">${w.name}</div>
-      <div class="wl-path">${w.path}</div>
-      <div class="wl-use">${w.use}</div>
     </div>
-  `).join('');
-}
 
-function switchTab(id) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    const ids = ['subdomain','portscan','http','urls','whois','vuln','methodology','wordlist'];
-    t.classList.toggle('active', ids[i] === id);
-  });
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
-}
+    <div class="targetbar">
+      <div class="targetlabel">TARGET:</div>
+      <input class="targetinput" id="targetInput" type="text" placeholder="contoh.com" value="" />
+      <button class="btn primary" onclick="generate()">GENERATE</button>
+      <button class="btn ghost" onclick="document.getElementById('targetInput').value=''; generate();">RESET</button>
+    </div>
 
-generateRecon();
-</script>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('ringkasan')">Ringkasan</div>
+      <div class="tab" onclick="switchTab('subdomain')">Subdomain</div>
+      <div class="tab" onclick="switchTab('portscan')">Port & Service</div>
+      <div class="tab" onclick="switchTab('http')">HTTP & Fingerprint</div>
+      <div class="tab" onclick="switchTab('urls')">URL & JS</div>
+      <div class="tab" onclick="switchTab('whois')">WHOIS & DNS</div>
+      <div class="tab" onclick="switchTab('prioritas')">Temuan Prioritas</div>
+      <div class="tab" onclick="switchTab('metode')">Metodologi</div>
+      <div class="tab" onclick="switchTab('wordlist')">Wordlist</div>
+      <div class="tab" onclick="switchTab('tips')">Tips & Trik</div>
+    </div>
+
+    <div class="content">
+      <div class="loading" id="loadingBar"><span id="loadingFill"></span></div>
+
+      <div class="panel active" id="panel-ringkasan">
+        <div class="hero">
+          <div class="card">
+            <h1>Dashboard Recon Bug Bounty yang lebih rapi, lebih jelas, dan enak dipakai belajar.</h1>
+            <p>
+              Tujuan halaman ini bukan cuma buat “jalanin command”, tapi juga buat bantu orang paham alur kerja recon:
+              mulai dari cari permukaan serangan, cek host hidup, baca teknologi yang dipakai, sampai milih area yang paling
+              layak ditelusuri manual.
+            </p>
+            <div class="subtext">
+              Gunakan hanya pada aset yang memang ada izin scope-nya. Untuk bug bounty, urutan yang disiplin biasanya lebih penting
+              daripada sekadar banyak alat.
+            </div>
+
+            <div class="grid-3">
+              <div class="mini">
+                <div class="k">FOKUS UTAMA</div>
+                <div class="v">Temukan aset yang benar-benar hidup, relevan, dan layak diperiksa lebih dalam.</div>
+              </div>
+              <div class="mini">
+                <div class="k">HASIL YANG DICARI</div>
+                <div class="v">Subdomain unik, service penting, endpoint menarik, parameter, dan perubahan perilaku.</div>
+              </div>
+              <div class="mini">
+                <div class="k">GAYA KERJA</div>
+                <div class="v">Passive dulu, lalu aktif secukupnya, terakhir verifikasi manual yang lebih teliti.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card side">
+            <h3>Alur kerja yang disarankan</h3>
+            <ul class="steps">
+              <li><div class="stepn">01</div><div class="steptxt"><b>Mulai dari passive recon</b><span>Cari informasi awal tanpa banyak interaksi supaya jejaknya minim dan data yang terkumpul lebih bersih.</span></div></li>
+              <li><div class="stepn">02</div><div class="steptxt"><b>Perluas aset</b><span>Gabungkan hasil subdomain, validasi DNS, lalu buang hasil duplikat.</span></div></li>
+              <li><div class="stepn">03</div><div class="steptxt"><b>Cari host hidup</b><span>Validasi HTTP dan fingerprint teknologi agar tahu mana yang layak diinvestigasi.</span></div></li>
+              <li><div class="stepn">04</div><div class="steptxt"><b>Kumpulkan endpoint</b><span>Arsip, crawler, dan file JS sering menyimpan jalur tersembunyi dan parameter menarik.</span></div></li>
+              <li><div class="stepn">05</div><div class="steptxt"><b>Pilih target prioritas</b><span>Fokus ke area login, admin, upload, redirect, API, dan fitur yang punya input user.</span></div></li>
+            </ul>
+            <div class="pill">Kalau hasilnya terlalu banyak, saring dulu yang benar-benar hidup.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-subdomain">
+        <div class="section-title">// Enumerasi Subdomain</div>
+        <div class="note"><strong>Gunanya:</strong> menemukan aset yang sering tidak terlihat dari domain utama. Subdomain baru sering membuka panel admin, API, staging, atau layanan lama yang masih aktif.</div>
+        <div class="explain">
+          <div class="box"><div class="label">KAPAN DIPAKAI</div><div class="text">Saat baru mulai scope atau ketika domain utama kelihatan terlalu “bersih”.<small>Biasanya tahap awal yang paling menghasilkan.</small></div></div>
+          <div class="box"><div class="label">YANG DICARI</div><div class="text">Nama host unik, subdomain staging, panel internal, endpoint API, dan subdomain yang resolve.<small>Hasil resolve lebih bernilai daripada daftar mentah.</small></div></div>
+          <div class="box"><div class="label">TANDA MENARIK</div><div class="text">Nama seperti dev, test, admin, api, beta, staging, internal, upload, portal.<small>Sering jadi pintu masuk ke fitur sensitif.</small></div></div>
+          <div class="box"><div class="label">CATATAN</div><div class="text">Gabungkan beberapa sumber lalu deduplikasi. Jangan langsung percaya satu sumber saja.<small>Validasi ulang agar hasil lebih akurat.</small></div></div>
+        </div>
+        <div class="section-card" id="cmds-subdomain"></div>
+      </div>
+
+      <div class="panel" id="panel-portscan">
+        <div class="section-title">// Port & Service Scanning</div>
+        <div class="note"><strong>Gunanya:</strong> mengetahui service apa yang benar-benar terbuka. Kadang port non-standar justru menyimpan panel manajemen, aplikasi lama, atau service internal yang terpapar.</div>
+        <div class="two-col">
+          <div class="result">
+            <h4>Cara membaca hasil</h4>
+            <p>Kalau port yang terbuka bukan 80/443, itu patut diperhatikan. Service versi lama, banner yang jelas, atau port yang jarang dipakai sering jadi petunjuk awal.</p>
+            <ul>
+              <li>Prioritaskan service dengan versi yang terdeteksi.</li>
+              <li>Lihat port yang “open” tapi tidak biasa.</li>
+              <li>Catat apakah ada perbedaan antara hasil cepat dan hasil full scan.</li>
+            </ul>
+          </div>
+          <div class="result">
+            <h4>Tips praktis</h4>
+            <p>Untuk bug bounty, jangan hanya buru-buru scan besar-besaran. Mulai dari port penting dulu, lalu naikkan cakupan ketika sudah ada indikasi aset menarik.</p>
+            <ul>
+              <li>Gunakan hasil subdomain yang sudah resolve.</li>
+              <li>Kelompokkan host berdasarkan service.</li>
+              <li>Kalau ada banyak host, fokus ke yang punya panel login atau API.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="section-card" id="cmds-portscan"></div>
+      </div>
+
+      <div class="panel" id="panel-http">
+        <div class="section-title">// Pemeriksaan HTTP & Fingerprint</div>
+        <div class="note"><strong>Gunanya:</strong> melihat host yang hidup, status code, judul halaman, teknologi yang dipakai, dan header penting. Ini membantu kamu cepat memilah target mana yang layak ditelusuri lebih dalam.</div>
+        <div class="explain">
+          <div class="box"><div class="label">APA YANG DILIHAT</div><div class="text">Status code, judul halaman, redirect, header keamanan, dan teknologi web.<small>Info ini sering dipakai buat memetakan aplikasi.</small></div></div>
+          <div class="box"><div class="label">KENAPA PENTING</div><div class="text">Dua host bisa sama-sama hidup, tapi satu mungkin panel admin, satu lagi cuma landing page.<small>Fingerprint membantu memisahkan prioritas.</small></div></div>
+          <div class="box"><div class="label">CIRI YANG MENARIK</div><div class="text">Header keamanan yang hilang, redirect aneh, title default, atau stack teknologi yang tua.<small>Ini bukan bukti celah, tapi sinyal untuk cek manual.</small></div></div>
+          <div class="box"><div class="label">HASIL BAGUS</div><div class="text">Daftar host hidup yang rapi dengan title dan technology stack.<small>Lebih mudah dibanding daftar mentah yang berantakan.</small></div></div>
+        </div>
+        <div class="section-card" id="cmds-http"></div>
+      </div>
+
+      <div class="panel" id="panel-urls">
+        <div class="section-title">// Pengumpulan URL & Analisis JS</div>
+        <div class="note"><strong>Gunanya:</strong> ini salah satu tahap paling penting di bug bounty. Endpoint lama, parameter tersembunyi, dan file JavaScript sering menyimpan jalur yang tidak kelihatan dari halaman utama.</div>
+        <div class="three-col">
+          <div class="result">
+            <h4>Apa yang dicari</h4>
+            <p>URL historis, parameter query, endpoint API, file JS, path admin, dan nama fitur yang menunjukkan alur aplikasi.</p>
+          </div>
+          <div class="result">
+            <h4>Kapan paling berguna</h4>
+            <p>Saat host sudah banyak, tapi kamu belum tahu mana yang menyimpan area menarik seperti upload, export, redirect, atau settings.</p>
+          </div>
+          <div class="result">
+            <h4>Cara prioritas</h4>
+            <p>Fokus ke URL yang punya parameter, endpoint sensitif, dan file JS yang memuat route atau token internal.</p>
+          </div>
+        </div>
+        <div class="section-card" id="cmds-urls"></div>
+      </div>
+
+      <div class="panel" id="panel-whois">
+        <div class="section-title">// WHOIS & DNS Recon</div>
+        <div class="note"><strong>Gunanya:</strong> membantu memahami kepemilikan aset, nameserver, rekaman DNS, dan jejak organisasi. Kadang informasi administratif bisa memperkuat asumsi tentang lingkungan target.</div>
+        <div class="two-col">
+          <div class="result">
+            <h4>Yang perlu diperhatikan</h4>
+            <p>Lihat MX, TXT, NS, dan pola naming. Rekaman DNS yang tidak konsisten sering menunjukkan aset lama, migrasi, atau konfigurasi yang belum rapi.</p>
+          </div>
+          <div class="result">
+            <h4>Nilai tambah</h4>
+            <p>Bagian ini bagus untuk memvalidasi scope dan menghubungkan domain utama dengan aset lain yang masih satu ekosistem.</p>
+          </div>
+        </div>
+        <div class="section-card" id="cmds-whois"></div>
+      </div>
+
+      <div class="panel" id="panel-prioritas">
+        <div class="section-title">// Area Temuan yang Layak Diprioritaskan</div>
+        <div class="note"><strong>Gunanya:</strong> bukan untuk menebak celah, tapi untuk memilah mana yang paling pantas dicek manual. Di bug bounty, fokus yang baik sering lebih penting daripada alat yang banyak.</div>
+        <div class="checklist">
+          <li><div class="icon">01</div><div><div class="checktitle">Login, registrasi, reset password</div><div class="checkdesc">Alur autentikasi sering punya state yang kompleks, input banyak, dan validasi yang berbeda-beda.</div></div></li>
+          <li><div class="icon">02</div><div><div class="checktitle">Panel admin, portal internal, dan staging</div><div class="checkdesc">Nama host seperti admin, internal, staging, dev, atau beta sering jadi petunjuk pertama untuk area bernilai.</div></div></li>
+          <li><div class="icon">03</div><div><div class="checktitle">Endpoint dengan parameter</div><div class="checkdesc">Parameter adalah tempat yang paling sering berubah perilaku. Catat mana yang menerima URL, ID, file, atau redirect.</div></div></li>
+          <li><div class="icon">04</div><div><div class="checktitle">Upload, export, import, dan preview</div><div class="checkdesc">Fitur ini sering menyentuh parsing file, rendering, dan validasi tipe data.</div></div></li>
+          <li><div class="icon">05</div><div><div class="checktitle">API yang responsnya kaya data</div><div class="checkdesc">Response yang memuat ID, role, email, path, atau status internal layak dicermati dengan teliti.</div></div></li>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-metode">
+        <div class="section-title">// Metodologi Bug Bounty</div>
+        <div class="note"><strong>Ini versi alur kerja yang enak dipelajari:</strong> dari passive recon, lalu validasi, lalu penentuan prioritas. Kalau kamu baru belajar, urutan seperti ini bikin prosesnya jauh lebih mudah dipahami.</div>
+        <ul class="checklist">
+          <li><div class="icon">01</div><div><div class="checktitle">Passive recon dulu</div><div class="checkdesc">Cari info dari sumber publik seperti DNS, arsip URL, dan hasil yang tidak banyak menyentuh target.</div></div></li>
+          <li><div class="icon">02</div><div><div class="checktitle">Subdomain enumeration</div><div class="checkdesc">Gabungkan beberapa alat, lalu filter hanya host yang resolve dan unik.</div></div></li>
+          <li><div class="icon">03</div><div><div class="checktitle">Port dan service mapping</div><div class="checkdesc">Cari service yang terbuka supaya kamu tahu aplikasi mana yang benar-benar aktif.</div></div></li>
+          <li><div class="icon">04</div><div><div class="checktitle">HTTP probing dan fingerprint</div><div class="checkdesc">Lihat title, status, redirect, dan teknologi untuk menilai target mana yang paling menarik.</div></div></li>
+          <li><div class="icon">05</div><div><div class="checktitle">URL harvesting & JS review</div><div class="checkdesc">Kumpulkan endpoint lama dan file JS agar alur aplikasi lebih lengkap.</div></div></li>
+          <li><div class="icon">06</div><div><div class="checktitle">Manual verification</div><div class="checkdesc">Baru setelah itu cek perilaku fitur, parameter, dan kontrol akses secara teliti.</div></div></li>
+          <li><div class="icon">07</div><div><div class="checktitle">Dokumentasi temuan</div><div class="checkdesc">Simpan bukti, catat endpoint, dan tulis alur reproduksi dengan bahasa yang gampang dipahami.</div></div></li>
+        </ul>
+      </div>
+
+      <div class="panel" id="panel-wordlist">
+        <div class="section-title">// Wordlist Rekomendasi</div>
+        <div class="note"><strong>Gunanya:</strong> memilih wordlist yang pas sering lebih efektif daripada memakai daftar yang sangat besar tapi tidak relevan.</div>
+        <div class="word-grid">
+          <div class="wl"><div class="name">SecLists</div><div class="path">/usr/share/seclists/</div><div class="use">Paket wordlist umum untuk subdomain, directory brute force, parameter, dan variasi lain.</div></div>
+          <div class="wl"><div class="name">dns-Jhaddix</div><div class="path">dns_jhaddix_all.txt</div><div class="use">Salah satu pilihan yang sering dipakai untuk brute-force subdomain.</div></div>
+          <div class="wl"><div class="name">directory-list-2.3</div><div class="path">Discovery/Web-Content/</div><div class="use">Cocok untuk directory enumeration ketika kamu butuh daftar medium yang masih relevan.</div></div>
+          <div class="wl"><div class="name">Assetnote Wordlists</div><div class="path">https://wordlists.assetnote.io</div><div class="use">Berguna untuk path API, parameter, dan endpoint modern yang lebih spesifik.</div></div>
+          <div class="wl"><div class="name">commonspeak2</div><div class="path">assetnote / commonspeak2</div><div class="use">Bagus untuk lingkungan web modern dan path yang mengikuti pola teknologi terkini.</div></div>
+          <div class="wl"><div class="name">raft-medium</div><div class="path">raft-medium-directories.txt</div><div class="use">Pilihan stabil untuk pengecekan awal ketika kamu ingin hasil yang seimbang.</div></div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-tips">
+        <div class="section-title">// Tips & Trik</div>
+        <div class="tip-grid">
+          <div class="tip">
+            <h4>Mulai dari yang paling bersih</h4>
+            <p>Kalau target terlihat terlalu besar, jangan langsung lompat ke teknik yang paling agresif. Mulai dari passive recon, validasi hasil, lalu pilih titik yang paling menjanjikan.</p>
+          </div>
+          <div class="tip">
+            <h4>Jangan terpaku pada jumlah alat</h4>
+            <p>Bug bounty yang bagus sering datang dari kombinasi data yang rapi dan observasi manual, bukan dari tool yang paling banyak.</p>
+          </div>
+          <div class="tip">
+            <h4>Selalu deduplikasi</h4>
+            <p>Hasil mentah dari banyak sumber hampir pasti berisik. Gabungkan, rapikan, hapus duplikat, lalu sortir berdasarkan host yang paling relevan.</p>
+          </div>
+          <div class="tip">
+            <h4>Prioritaskan fitur yang punya state</h4>
+            <p>Login, reset password, upload, export, dan settings sering lebih menarik daripada halaman statis biasa karena ada logika tambahan di belakangnya.</p>
+          </div>
+          <div class="tip">
+            <h4>Catat perubahan kecil</h4>
+            <p>Perbedaan response code, title, redirect, atau header kadang terlihat sepele, tapi justru jadi petunjuk awal yang paling berguna.</p>
+          </div>
+          <div class="tip">
+            <h4>Tulis laporan seperti menjelaskan ke orang baru</h4>
+            <p>Laporan yang bagus tidak harus rumit. Jelaskan konteks, langkah reproduksi, bukti, dan dampaknya dengan bahasa yang jelas dan singkat.</p>
+          </div>
+        </div>
+        <div class="footer">
+          <div>Catatan penting: halaman ini untuk pembelajaran dan audit pada aset yang memang ada izin. Gunakan secara bertanggung jawab.</div>
+          <div>Kalau hasil render di Vercel masih terasa tidak penuh, pastikan file utamanya bernama <b>index.html</b> dan tidak ada wrapper tambahan dari platform hosting.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTarget = 'contoh.com';
+
+    function cleanTarget(input) {
+      const raw = (input || '').trim();
+      if (!raw) return 'contoh.com';
+      return raw.replace(/^https?:\\/\\//i, '').replace(/\\/.*$/, '').replace(/\\?.*$/, '').replace(/#.*$/, '');
+    }
+    function T() {
+      return cleanTarget(document.getElementById('targetInput').value);
+    }
+    function safeDomain() {
+      return T().replace(/[^a-zA-Z0-9.-]/g, '');
+    }
+    function cmd(label, title, desc, raw) {
+      const colored = raw
+        .replace(/^([a-zA-Z][\\w-]+)/, '<span class="kw">$1</span>')
+        .replace(/( -[\\w-]+)/g, '<span class="flag">$1</span>')
+        .replace(/(\\bhttps?:\\/\\/[^\\s]+)/g, '<span class="val">$1</span>');
+      return `<div class="cmd-block">
+        <div class="cmd-label"># ${label}</div>
+        <div class="cmd-title">${title}</div>
+        <div class="cmd-desc">${desc}</div>
+        <div class="cmd-text">${colored}</div>
+        <button class="copy-btn" onclick="copyCmd(this, ${JSON.stringify(raw)})">salin</button>
+      </div>`;
+    }
+    function copyCmd(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const old = btn.textContent;
+        btn.textContent = 'tersalin';
+        setTimeout(() => btn.textContent = old, 1200);
+      });
+    }
+    function tabOn(id){
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      const tabs = [...document.querySelectorAll('.tab')];
+      const ids = ['ringkasan','subdomain','portscan','http','urls','whois','prioritas','metode','wordlist','tips'];
+      tabs[ids.indexOf(id)]?.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + id).classList.add('active');
+    }
+    function switchTab(id){ tabOn(id); }
+
+    function renderSubdomain(d){
+      return [
+        cmd('Subdomain', 'Subfinder (passive)', 'Cari subdomain dari sumber pasif. Cocok untuk langkah awal karena minim interaksi dengan target.', `subfinder -d ${d} -all -recursive -o subfinder_${d}.txt`),
+        cmd('Subdomain', 'Amass (passive)', 'Menambah sumber enumerasi dan membantu memperluas cakupan aset.', `amass enum -passive -d ${d} -o amass_${d}.txt`),
+        cmd('Subdomain', 'Assetfinder', 'Cepat untuk mengumpulkan kandidat subdomain dari sumber publik.', `assetfinder --subs-only ${d} | tee assetfinder_${d}.txt`),
+        cmd('Subdomain', 'crt.sh', 'Cari subdomain dari certificate transparency. Berguna untuk host yang pernah dipakai sebelumnya.', `curl -s "https://crt.sh/?q=%.${d}&output=json" | jq -r '.[].name_value' | sort -u`),
+        cmd('Subdomain', 'Validasi DNS dengan dnsx', 'Setelah digabung, cek mana yang benar-benar resolve supaya daftar kamu bersih.', `dnsx -d ${d} -w /usr/share/seclists/Discovery/DNS/dns-Jhaddix.txt -o dnsx_${d}.txt`),
+        cmd('Subdomain', 'Gabung dan deduplikasi', 'Satukan semua hasil lalu buang duplikat. Ini langkah sederhana tapi sangat penting.', `cat subfinder_${d}.txt amass_${d}.txt assetfinder_${d}.txt | sort -u | dnsx -silent -o resolved_${d}.txt`),
+        cmd('Subdomain', 'Permutation', 'Coba pola variasi nama host untuk menemukan aset turunan yang tidak langsung muncul.', `gotator -sub resolved_${d}.txt -perm /usr/share/seclists/Discovery/DNS/best-dns-wordlist.txt | dnsx -silent`)
+      ].join('');
+    }
+    function renderPortscan(d){
+      return [
+        cmd('Port', 'Masscan full port', 'Dipakai saat kamu butuh gambaran cepat port mana yang terbuka pada host yang sudah jelas valid.', `masscan -p1-65535 ${d} --rate=10000 -oL masscan_${d}.txt`),
+        cmd('Port', 'Nmap full port + service', 'Langkah verifikasi yang lebih detail untuk melihat service dan versi yang terbuka.', `nmap -p- -sV -sC -T4 --open ${d} -oN nmap_full_${d}.txt`),
+        cmd('Port', 'Nmap top 1000', 'Cocok untuk cek awal yang lebih ringan dan cepat.', `nmap -sV --top-ports 1000 ${d} -oN nmap_quick_${d}.txt`),
+        cmd('Port', 'Script vuln terbatas', 'Gunakan untuk host yang memang relevan setelah kamu menilai service-nya.', `nmap --script vuln -p 80,443,8080,8443 ${d}`),
+        cmd('Port', 'Shodan host lookup', 'Membantu melihat jejak port/service dari sudut pandang publik.', `shodan host $(dig +short ${d})`)
+      ].join('');
+    }
+    function renderHttp(d){
+      return [
+        cmd('HTTP', 'Httpx probe', 'Memeriksa host yang hidup sambil mengambil status code, title, dan teknologi dasar.', `cat resolved_${d}.txt | httpx -silent -status-code -title -tech-detect -o httpx_${d}.txt`),
+        cmd('HTTP', 'Httpx multi-port', 'Bagus untuk domain yang melayani aplikasi di port non-standar.', `cat resolved_${d}.txt | httpx -ports 80,443,8080,8443,8888 -follow-redirects -status-code -title`),
+        cmd('HTTP', 'WhatWeb', 'Membantu mengenali teknologi web yang terlihat dari sisi luar.', `whatweb -a 3 https://${d} --log-json whatweb_${d}.json`),
+        cmd('HTTP', 'Header keamanan', 'Cepat untuk mengecek header penting seperti HSTS, CSP, dan X-Frame-Options.', `curl -sI https://${d} | grep -i "x-frame\\|csp\\|hsts\\|x-content\\|referrer"`),
+        cmd('HTTP', 'Wappalyzer CLI', 'Fingerprinting tambahan untuk memvalidasi teknologi yang dideteksi.', `wappalyzer https://${d}`),
+        cmd('HTTP', 'Eyewitness', 'Dipakai untuk snapshot visual agar kamu cepat membandingkan halaman.', `eyewitness -f resolved_${d}.txt --web --timeout 30`)
+      ].join('');
+    }
+    function renderUrls(d){
+      return [
+        cmd('URL', 'Waybackurls', 'Mengambil URL historis dari arsip publik. Sering berisi endpoint lama yang masih aktif.', `waybackurls ${d} | tee wayback_${d}.txt`),
+        cmd('URL', 'gau', 'Mengumpulkan URL dari beberapa sumber agar cakupan lebih luas.', `gau ${d} --subs | tee gau_${d}.txt`),
+        cmd('URL', 'katana', 'Crawler modern untuk menangkap path yang tidak terlihat dari arsip.', `katana -u https://${d} -d 5 -jc -o katana_${d}.txt`),
+        cmd('URL', 'Hakrawler', 'Crawler ringan untuk mendapatkan jalur cepat dari host utama atau subdomain.', `echo https://${d} | hakrawler -subs -d 3`),
+        cmd('JS', 'Ambil file JS', 'Pisahkan file JavaScript agar kamu bisa baca route, parameter, dan endpoint internal.', `cat gau_${d}.txt wayback_${d}.txt | grep "\\.js$" | sort -u | tee jsfiles_${d}.txt`),
+        cmd('JS', 'LinkFinder', 'Mencari endpoint, route, dan string menarik dari file JavaScript.', `cat jsfiles_${d}.txt | xargs -I{} linkfinder -i {} -o cli`),
+        cmd('URL', 'Ambil parameter', 'Fokus ke URL yang mengandung parameter karena sering menjadi tempat yang layak dicek manual.', `cat gau_${d}.txt wayback_${d}.txt | grep "?" | uro | tee params_${d}.txt`),
+        cmd('URL', 'Filter parameter penting', 'Cari parameter yang sering berkaitan dengan redirect, file, ID, atau input lain yang sensitif.', `cat params_${d}.txt | grep -E "url=|redirect=|next=|return=|path=|file=|cmd=|exec=|id=|user="`)
+      ].join('');
+    }
+    function renderWhois(d){
+      return [
+        cmd('DNS', 'WHOIS lookup', 'Mengetahui data registrasi domain dan petunjuk pemilik aset.', `whois ${d}`),
+        cmd('DNS', 'Semua record DNS', 'Melihat rekaman yang tersedia untuk memahami konfigurasi domain.', `dig ${d} ANY +noall +answer`),
+        cmd('DNS', 'MX record', 'Berguna untuk melihat layanan email yang dipakai.', `dig ${d} MX +short`),
+        cmd('DNS', 'TXT / SPF', 'TXT record kadang menyimpan informasi konfigurasi yang berguna.', `dig ${d} TXT +short`),
+        cmd('DNS', 'AXFR test', 'Hanya untuk pengecekan di scope yang kamu punya izin. Kalau terbuka, itu konfigurasi yang sangat perlu diperhatikan.', `dig axfr ${d} @$(dig ns ${d} +short | head -1)`),
+        cmd('DNS', 'DNS detail via dnsx', 'Mendapatkan A, CNAME, MX, NS, TXT, PTR dalam satu langkah.', `dnsx -d ${d} -a -cname -mx -ns -txt -ptr -resp -silent`),
+        cmd('DNS', 'BGP / ASN lookup', 'Membantu memahami konteks jaringan dan kemungkinan relasi aset.', `curl -s "https://api.bgpview.io/search?query_term=${d}" | jq .data`),
+        cmd('DNS', 'Reverse IP', 'Bisa dipakai untuk melihat domain lain yang mungkin satu lingkungan.', `curl -s "https://api.hackertarget.com/reverseiplookup/?q=${d}"`)
+      ].join('');
+    }
+    function renderAll(){
+      const d = safeDomain();
+      currentTarget = d;
+      document.getElementById('cmds-subdomain').innerHTML = renderSubdomain(d);
+      document.getElementById('cmds-portscan').innerHTML = renderPortscan(d);
+      document.getElementById('cmds-http').innerHTML = renderHttp(d);
+      document.getElementById('cmds-urls').innerHTML = renderUrls(d);
+      document.getElementById('cmds-whois').innerHTML = renderWhois(d);
+      const lb = document.getElementById('loadingBar');
+      const fill = document.getElementById('loadingFill');
+      lb.classList.add('active');
+      fill.style.width = '0%';
+      setTimeout(() => fill.style.width = '100%', 40);
+      setTimeout(() => lb.classList.remove('active'), 520);
+    }
+    function generate(){ renderAll(); }
+    document.getElementById('targetInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') generate();
+    });
+    renderAll();
+  </script>
+</body>
+</html>
