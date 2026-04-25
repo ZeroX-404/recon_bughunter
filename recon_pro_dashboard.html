@@ -1,0 +1,520 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap');
+  :root {
+    --c-bg: #0a0e14;
+    --c-panel: #0d1117;
+    --c-border: #1e2a3a;
+    --c-accent: #00d4ff;
+    --c-green: #39ff80;
+    --c-amber: #ffb300;
+    --c-red: #ff4444;
+    --c-text: #c9d1d9;
+    --c-muted: #5a6a7a;
+    --c-tab-active: #00d4ff;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  .recon-root {
+    background: var(--c-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    font-family: var(--font-ui);
+    color: var(--c-text);
+    overflow: hidden;
+    min-height: 580px;
+  }
+  .header {
+    background: var(--c-panel);
+    border-bottom: 1px solid var(--c-border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    color: var(--c-accent);
+    letter-spacing: 2px;
+  }
+  .logo span { color: var(--c-green); }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--c-green);
+    box-shadow: 0 0 6px var(--c-green);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-text { font-size: 12px; color: var(--c-muted); font-family: var(--font-mono); }
+  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .badge {
+    font-size: 10px; font-family: var(--font-mono);
+    padding: 2px 8px; border-radius: 3px;
+    border: 1px solid;
+  }
+  .badge-red { color: var(--c-red); border-color: var(--c-red); }
+  .badge-amber { color: var(--c-amber); border-color: var(--c-amber); }
+  .badge-green { color: var(--c-green); border-color: var(--c-green); }
+
+  .target-bar {
+    padding: 12px 20px;
+    background: #080c10;
+    border-bottom: 1px solid var(--c-border);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .target-label { font-family: var(--font-mono); font-size: 12px; color: var(--c-accent); min-width: 60px; }
+  .target-input {
+    flex: 1;
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--c-green);
+    outline: none;
+  }
+  .target-input:focus { border-color: var(--c-accent); }
+  .scan-btn {
+    background: var(--c-accent);
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 20px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: opacity .15s;
+  }
+  .scan-btn:hover { opacity: 0.85; }
+  .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .tabs {
+    display: flex;
+    background: var(--c-panel);
+    border-bottom: 1px solid var(--c-border);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--c-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color .15s;
+    letter-spacing: .5px;
+  }
+  .tab:hover { color: var(--c-text); }
+  .tab.active { color: var(--c-accent); border-bottom-color: var(--c-accent); }
+
+  .content { padding: 16px 20px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--c-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--c-border);
+  }
+
+  .cmd-block {
+    background: #060a0f;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .cmd-label {
+    font-size: 10px;
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .cmd-text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--c-green);
+    word-break: break-all;
+    line-height: 1.6;
+  }
+  .cmd-text .kw { color: var(--c-amber); }
+  .cmd-text .flag { color: #7dd3fc; }
+  .cmd-text .val { color: var(--c-text); }
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: transparent;
+    border: 1px solid var(--c-border);
+    color: var(--c-muted);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .copy-btn:hover { border-color: var(--c-accent); color: var(--c-accent); }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tool-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .tool-card:hover { border-color: var(--c-accent); }
+  .tool-card.selected { border-color: var(--c-green); background: #0a1a12; }
+  .tool-name { font-size: 13px; font-weight: 600; color: var(--c-text); margin-bottom: 3px; }
+  .tool-desc { font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); }
+
+  .result-box {
+    background: #060a0f;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    min-height: 120px;
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--c-text);
+    line-height: 1.7;
+    overflow-y: auto;
+    max-height: 220px;
+  }
+  .result-line { margin-bottom: 2px; }
+  .result-line.ok { color: var(--c-green); }
+  .result-line.warn { color: var(--c-amber); }
+  .result-line.err { color: var(--c-red); }
+  .result-line.info { color: var(--c-accent); }
+  .result-line.muted { color: var(--c-muted); }
+
+  .checklist { list-style: none; }
+  .checklist li {
+    padding: 7px 0;
+    border-bottom: 1px solid #131b24;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .check-icon { font-size: 11px; min-width: 18px; margin-top: 2px; }
+  .check-title { font-weight: 600; color: var(--c-text); }
+  .check-desc { font-size: 11px; color: var(--c-muted); margin-top: 2px; font-family: var(--font-mono); }
+
+  .wordlist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .wl-card {
+    background: var(--c-panel);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .wl-name { font-size: 12px; font-weight: 600; color: var(--c-accent); }
+  .wl-path { font-size: 10px; color: var(--c-muted); font-family: var(--font-mono); margin-top: 2px; }
+  .wl-use { font-size: 11px; color: var(--c-text); margin-top: 4px; }
+
+  .loading-bar {
+    height: 2px;
+    background: var(--c-border);
+    border-radius: 1px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  .loading-fill {
+    height: 100%;
+    background: var(--c-accent);
+    width: 0%;
+    transition: width .3s;
+  }
+  .loading-bar.active { display: block; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 500px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+
+<div class="recon-root">
+  <div class="header">
+    <div class="logo">RECON<span>PRO</span></div>
+    <div class="status-dot"></div>
+    <div class="status-text">READY</div>
+    <div class="header-right">
+      <div class="badge badge-red">CRITICAL</div>
+      <div class="badge badge-amber">HIGH</div>
+      <div class="badge badge-green">PASSIVE</div>
+    </div>
+  </div>
+
+  <div class="target-bar">
+    <div class="target-label">TARGET:</div>
+    <input class="target-input" id="targetInput" type="text" placeholder="example.com" value="" />
+    <button class="scan-btn" onclick="generateRecon()">GENERATE</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('subdomain')">Subdomain</div>
+    <div class="tab" onclick="switchTab('portscan')">Port Scan</div>
+    <div class="tab" onclick="switchTab('http')">HTTP Probe</div>
+    <div class="tab" onclick="switchTab('urls')">URL/JS</div>
+    <div class="tab" onclick="switchTab('whois')">WHOIS/DNS</div>
+    <div class="tab" onclick="switchTab('vuln')">Vuln Scan</div>
+    <div class="tab" onclick="switchTab('methodology')">Methodology</div>
+    <div class="tab" onclick="switchTab('wordlist')">Wordlists</div>
+  </div>
+
+  <div class="content">
+    <div class="loading-bar" id="loadingBar"><div class="loading-fill" id="loadingFill"></div></div>
+
+    <!-- SUBDOMAIN -->
+    <div class="panel active" id="panel-subdomain">
+      <div class="section-title">// Subdomain Enumeration</div>
+      <div id="cmds-subdomain"></div>
+    </div>
+
+    <!-- PORT SCAN -->
+    <div class="panel" id="panel-portscan">
+      <div class="section-title">// Port Scanning</div>
+      <div id="cmds-portscan"></div>
+    </div>
+
+    <!-- HTTP PROBE -->
+    <div class="panel" id="panel-http">
+      <div class="section-title">// HTTP Probing & Fingerprinting</div>
+      <div id="cmds-http"></div>
+    </div>
+
+    <!-- URLS -->
+    <div class="panel" id="panel-urls">
+      <div class="section-title">// URL Discovery & JS Analysis</div>
+      <div id="cmds-urls"></div>
+    </div>
+
+    <!-- WHOIS -->
+    <div class="panel" id="panel-whois">
+      <div class="section-title">// WHOIS / DNS Recon</div>
+      <div id="cmds-whois"></div>
+    </div>
+
+    <!-- VULN -->
+    <div class="panel" id="panel-vuln">
+      <div class="section-title">// Vulnerability Scanning</div>
+      <div id="cmds-vuln"></div>
+    </div>
+
+    <!-- METHODOLOGY -->
+    <div class="panel" id="panel-methodology">
+      <div class="section-title">// Bug Hunting Methodology</div>
+      <ul class="checklist" id="methodology-list"></ul>
+    </div>
+
+    <!-- WORDLIST -->
+    <div class="panel" id="panel-wordlist">
+      <div class="section-title">// Recommended Wordlists</div>
+      <div class="wordlist-grid" id="wordlist-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let target = 'example.com';
+
+const methodology = [
+  { icon:'01', title:'Passive Recon', desc:'WHOIS, crt.sh, Shodan, Google Dorks, LinkedIn', color:'info' },
+  { icon:'02', title:'Subdomain Enum', desc:'Subfinder, Amass, Assetfinder, Brute-force, Permutation', color:'info' },
+  { icon:'03', title:'Port & Service Scan', desc:'Nmap full port, Masscan, Service version detection', color:'warn' },
+  { icon:'04', title:'HTTP Probing', desc:'Httpx, Whatweb, Wappalyzer — find live hosts & tech stack', color:'info' },
+  { icon:'05', title:'URL & JS Harvesting', desc:'Waybackurls, Gau, Hakrawler, LinkFinder on JS files', color:'info' },
+  { icon:'06', title:'Directory Bruteforce', desc:'Ffuf, Gobuster, Feroxbuster — common paths + custom wordlists', color:'warn' },
+  { icon:'07', title:'Vulnerability Scanning', desc:'Nuclei templates, Nikto, DalFox XSS, SQLmap', color:'err' },
+  { icon:'08', title:'Manual Testing', desc:'Parameter tampering, Auth bypass, IDOR, SSRF, XXE', color:'err' },
+  { icon:'09', title:'Report & PoC', desc:'Screenshot, Burp history, CVSS scoring, PoC write-up', color:'ok' },
+];
+
+const wordlists = [
+  { name:'SecLists', path:'/usr/share/seclists/', use:'General purpose — dirs, subdomains, passwords' },
+  { name:'dns-Jhaddix', path:'dns_jhaddix_all.txt', use:'Best subdomain brute wordlist' },
+  { name:'directory-list-2.3', path:'Discovery/Web-Content/', use:'Medium/big dir brute wordlist' },
+  { name:'assetnote', path:'https://wordlists.assetnote.io', use:'API paths, params, tech-specific' },
+  { name:'commonspeak2', path:'github: assetnote', use:'Modern tech-aware wordlist' },
+  { name:'raft-medium', path:'raft-medium-directories.txt', use:'Reliable medium directory list' },
+];
+
+function h(s) { return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function T() { return document.getElementById('targetInput').value.trim() || 'example.com'; }
+function domain() { return T().replace(/^https?:\/\//,'').split('/')[0]; }
+function ip() { return domain(); }
+
+function cmd(label, raw) {
+  const colored = raw
+    .replace(/^(\w[\w-]+)/, '<span class="kw">$1</span>')
+    .replace(/( -[\w-]+)/g, '<span class="flag">$1</span>');
+  return `<div class="cmd-block">
+    <div class="cmd-label"># ${h(label)}</div>
+    <div class="cmd-text">${colored}</div>
+    <button class="copy-btn" onclick="copyCmd(this,'${raw.replace(/'/g,"\\'")}')">copy</button>
+  </div>`;
+}
+
+function copyCmd(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+
+function generateRecon() {
+  const d = domain();
+  target = d;
+
+  renderSubdomain(d);
+  renderPortscan(d);
+  renderHttp(d);
+  renderUrls(d);
+  renderWhois(d);
+  renderVuln(d);
+  renderMethodology();
+  renderWordlist();
+
+  const lb = document.getElementById('loadingBar');
+  const lf = document.getElementById('loadingFill');
+  lb.classList.add('active');
+  lf.style.width = '0%';
+  setTimeout(() => lf.style.width = '100%', 50);
+  setTimeout(() => lb.classList.remove('active'), 600);
+}
+
+function renderSubdomain(d) {
+  document.getElementById('cmds-subdomain').innerHTML = [
+    cmd('Subfinder (passive)', `subfinder -d ${d} -all -recursive -o subfinder_${d}.txt`),
+    cmd('Amass (passive)', `amass enum -passive -d ${d} -o amass_${d}.txt`),
+    cmd('Assetfinder', `assetfinder --subs-only ${d} | tee assetfinder_${d}.txt`),
+    cmd('crt.sh (certificate transparency)', `curl -s "https://crt.sh/?q=%.${d}&output=json" | jq -r '.[].name_value' | sort -u`),
+    cmd('Brute-force with dnsx', `dnsx -d ${d} -w /usr/share/seclists/Discovery/DNS/dns-Jhaddix.txt -o dnsx_${d}.txt`),
+    cmd('Combine & resolve unique', `cat subfinder_${d}.txt amass_${d}.txt assetfinder_${d}.txt | sort -u | dnsx -silent -o resolved_${d}.txt`),
+    cmd('Subdomain permutation (gotator)', `gotator -sub resolved_${d}.txt -perm /usr/share/seclists/Discovery/DNS/best-dns-wordlist.txt | dnsx -silent`),
+  ].join('');
+}
+
+function renderPortscan(d) {
+  document.getElementById('cmds-portscan').innerHTML = [
+    cmd('Masscan (fast full port)', `masscan -p1-65535 ${d} --rate=10000 -oL masscan_${d}.txt`),
+    cmd('Nmap full port + service', `nmap -p- -sV -sC -T4 --open ${d} -oN nmap_full_${d}.txt`),
+    cmd('Nmap top 1000 quick', `nmap -sV --top-ports 1000 ${d} -oN nmap_quick_${d}.txt`),
+    cmd('Nmap script vuln scan', `nmap --script vuln -p 80,443,8080,8443 ${d}`),
+    cmd('Shodan CLI recon', `shodan host $(dig +short ${d})`),
+  ].join('');
+}
+
+function renderHttp(d) {
+  document.getElementById('cmds-http').innerHTML = [
+    cmd('Httpx probe (live hosts)', `cat resolved_${d}.txt | httpx -silent -status-code -title -tech-detect -o httpx_${d}.txt`),
+    cmd('Httpx with ports', `cat resolved_${d}.txt | httpx -ports 80,443,8080,8443,8888 -follow-redirects -status-code -title`),
+    cmd('Whatweb tech detection', `whatweb -a 3 https://${d} --log-json whatweb_${d}.json`),
+    cmd('Check security headers', `curl -sI https://${d} | grep -i "x-frame\\|csp\\|hsts\\|x-content\\|referrer"`),
+    cmd('Wappalyzer CLI', `wappalyzer https://${d}`),
+    cmd('Eyewitness (screenshot)', `eyewitness -f resolved_${d}.txt --web --timeout 30`),
+  ].join('');
+}
+
+function renderUrls(d) {
+  document.getElementById('cmds-urls').innerHTML = [
+    cmd('Waybackurls (historical)', `waybackurls ${d} | tee wayback_${d}.txt`),
+    cmd('Gau (all URLs)', `gau ${d} --subs | tee gau_${d}.txt`),
+    cmd('Katana (crawler)', `katana -u https://${d} -d 5 -jc -o katana_${d}.txt`),
+    cmd('Hakrawler', `echo https://${d} | hakrawler -subs -d 3`),
+    cmd('Extract JS files', `cat gau_${d}.txt wayback_${d}.txt | grep "\\.js$" | sort -u | tee jsfiles_${d}.txt`),
+    cmd('LinkFinder on JS', `cat jsfiles_${d}.txt | xargs -I{} linkfinder -i {} -o cli`),
+    cmd('Extract params (interesting)', `cat gau_${d}.txt wayback_${d}.txt | grep "?" | uro | tee params_${d}.txt`),
+    cmd('Filter interesting params', `cat params_${d}.txt | grep -E "url=|redirect=|next=|return=|path=|file=|cmd=|exec=|id=|user="`),
+  ].join('');
+}
+
+function renderWhois(d) {
+  document.getElementById('cmds-whois').innerHTML = [
+    cmd('WHOIS lookup', `whois ${d}`),
+    cmd('DNS records (all)', `dig ${d} ANY +noall +answer`),
+    cmd('MX records', `dig ${d} MX +short`),
+    cmd('SPF / TXT records', `dig ${d} TXT +short`),
+    cmd('Zone transfer (AXFR)', `dig axfr ${d} @$(dig ns ${d} +short | head -1)`),
+    cmd('Subfinder + DNSX full info', `dnsx -d ${d} -a -cname -mx -ns -txt -ptr -resp -silent`),
+    cmd('BGP / ASN lookup', `curl -s "https://api.bgpview.io/search?query_term=${d}" | jq .data`),
+    cmd('Reverse IP (hackertarget)', `curl -s "https://api.hackertarget.com/reverseiplookup/?q=${d}"`),
+  ].join('');
+}
+
+function renderVuln(d) {
+  document.getElementById('cmds-vuln').innerHTML = [
+    cmd('Nuclei (all templates)', `nuclei -u https://${d} -t /root/nuclei-templates/ -severity critical,high,medium -o nuclei_${d}.txt`),
+    cmd('Nuclei CVE only', `nuclei -u https://${d} -t /root/nuclei-templates/cves/ -o nuclei_cves_${d}.txt`),
+    cmd('Nikto web scan', `nikto -host https://${d} -output nikto_${d}.txt`),
+    cmd('Ffuf directory brute', `ffuf -u https://${d}/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -mc 200,301,302,403 -o ffuf_${d}.json`),
+    cmd('DalFox XSS scan', `dalfox url https://${d} --follow-redirects`),
+    cmd('XSS from params', `cat params_${d}.txt | dalfox pipe --follow-redirects -o xss_${d}.txt`),
+    cmd('SQLmap (blind)', `sqlmap -u "https://${d}/?id=1" --batch --dbs --random-agent`),
+    cmd('CORS misconfiguration', `curl -sI -H "Origin: https://evil.com" https://${d} | grep -i "access-control"`),
+    cmd('SSRF test (basic)', `curl -s "https://${d}/?url=http://169.254.169.254/latest/meta-data/"`),
+    cmd('Open redirect check', `ffuf -u "https://${d}/FUZZ" -w /usr/share/seclists/Fuzzing/redirects.txt -mc 301,302`),
+  ].join('');
+}
+
+function renderMethodology() {
+  const colors = { info:'var(--c-accent)', warn:'var(--c-amber)', err:'var(--c-red)', ok:'var(--c-green)' };
+  document.getElementById('methodology-list').innerHTML = methodology.map(m => `
+    <li>
+      <div class="check-icon" style="color:${colors[m.color]};font-family:var(--font-mono)">[${m.icon}]</div>
+      <div>
+        <div class="check-title">${m.title}</div>
+        <div class="check-desc">${m.desc}</div>
+      </div>
+    </li>
+  `).join('');
+}
+
+function renderWordlist() {
+  document.getElementById('wordlist-grid').innerHTML = wordlists.map(w => `
+    <div class="wl-card">
+      <div class="wl-name">${w.name}</div>
+      <div class="wl-path">${w.path}</div>
+      <div class="wl-use">${w.use}</div>
+    </div>
+  `).join('');
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const ids = ['subdomain','portscan','http','urls','whois','vuln','methodology','wordlist'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+generateRecon();
+</script>
